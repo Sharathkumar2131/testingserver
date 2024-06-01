@@ -1,15 +1,17 @@
+require('dotenv').config(); // Add this line to load .env variables
+
 const express = require('express');
 const sql = require('mssql');
 
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 5000;
 
 // Database configuration
 const dbConfig = {
-    user: 'sharath',
-    password: 'chinna@123',
-    server: '192.168.1.15',
-    database: 'practive',
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    server: process.env.DB_SERVER,
+    database: process.env.DB_DATABASE,
     options: {
         encrypt: false, 
         trustServerCertificate: true 
@@ -23,14 +25,19 @@ async function getData() {
         const result = await sql.query`SELECT * FROM users`;
         return result.recordset;
     } catch (err) {
-        console.error(err);
+        console.error('Database query error:', err);
+        throw err;
     }
 }
 
 // API endpoint to get user data
 app.get('/api/users', async (req, res) => {
-    const data = await getData();
-    res.json(data);
+    try {
+        const data = await getData();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch user data', details: err.message });
+    }
 });
 
 app.listen(port, () => {
